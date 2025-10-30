@@ -1,0 +1,50 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+# 明确声明权限，确保 GITHUB_TOKEN 可以创建 release 并上传文件
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Make mvnw executable
+      run: chmod +x ./mvnw
+
+    - name: Build Project
+      run: ./mvnw -B -ntp clean package
+      # 如果你确实要跳过测试，请改为:
+      # run: ./mvnw -B -ntp clean package -DskipTests
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          **/target/*.jar
+          **/target/*.war
+        body: |
+          自动构建的 Spring Cloud Gateway 发布版本
+          
+          包含文件:
+          - 可执行 JAR 文件
+          - 源码 JAR 文件
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
